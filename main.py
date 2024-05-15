@@ -4,8 +4,6 @@ from scipy.signal import find_peaks
 from scipy.signal import chirp, stft
 
 def main()->None:
-    
-    # Initialize PyAudio
     p = pyaudio.PyAudio()
 
     CHUNK_SIZE = 1024  
