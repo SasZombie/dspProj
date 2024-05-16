@@ -1,3 +1,4 @@
+import pyaudio
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import find_peaks
@@ -28,9 +29,9 @@ def main()->None:
     for volume in volume_levels:
         
         
-        #unda de sinus 
         data = stream.read(CHUNK_SIZE)
                 
+        #unda de sinus 
         tone1 = volume * np.sin(2 * np.pi * frequency1 * t)
         tone2 = volume * np.sin(2 * np.pi * frequency2 * t)
         tone_signal = tone1 + tone2
