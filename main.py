@@ -5,15 +5,15 @@ from scipy.signal import find_peaks
 from scipy.signal import chirp, stft
 
 def main()->None:
-    p = pyaudio.PyAudio()
+    # p = pyaudio.PyAudio()
 
-    CHUNK_SIZE = 1024  
+    # CHUNK_SIZE = 1024  
     
-    stream = p.open(format=pyaudio.paInt16,
-                    channels=1,
-                    rate=sample_rate,
-                    input=True,
-                    frames_per_buffer=CHUNK_SIZE)
+    # stream = p.open(format=pyaudio.paInt16,
+    #                 channels=1,
+    #                 rate=sample_rate,
+    #                 input=True,
+    #                 frames_per_buffer=CHUNK_SIZE)
     sample_rate = 10000  #Random value 
     duration = 1  
     frequency1 = 1000  
@@ -27,9 +27,9 @@ def main()->None:
     im3_values = []
 
     for volume in volume_levels:
+
         
-        
-        data = stream.read(CHUNK_SIZE)
+        # data = stream.read(CHUNK_SIZE)
                 
         #unda de sinus 
         tone1 = volume * np.sin(2 * np.pi * frequency1 * t)
@@ -38,16 +38,26 @@ def main()->None:
 
     
 
-        audio = np.frombuffer(data, dtype=np.int16)
+        # audio = np.frombuffer(data, dtype=np.int16)
         #Folosim audio in loc de tone sig
+
+
+        """
+        When two tones are present at the input of a nonlinear system, such as an amplifier, they generate intermodulation distortion products at the output. 
+        For third-order intermodulation distortion, these products include sum and difference frequencies of the input tones, 
+        as well as combinations of three times the input frequencies. In the STFT output, the IM3 power corresponds to the magnitude of the peak at the frequency 
+        associated with the third-order intermodulation product. The magnitude represents the amplitude of the intermodulation distortion component at that frequency.
+        """
         f, t, Zxx = stft(tone_signal, fs=sample_rate)
         im3_peaks = np.where(np.abs(Zxx) == np.abs(Zxx).max())
+        print(im3_peaks)
         im3_power = np.abs(Zxx[im3_peaks[0], im3_peaks[1]]) ** 2
         
         # power1 = (np.max( np.sin(2 * np.pi * frequency1 * t)) ** 2) / 2
-        # power2 = (np.max( np.sin(2 * np.pi * frequency2 * t)) ** 2) / 2 
-        
-        ip3 = 10 * np.log10((volume*2) ** 2 + (volume*2)**2 - im3_power / 2) 
+        # power2 = (np.max( np.sin(2 * np.pi * frequency2 * t)) ** 2) / 2  
+        # IP3=Powerin1​+Powerin2​− PowerIM3/2​​
+        #10 * log 10 doearece sunt decibeli
+        ip3 = 10 * np.log10(3/2 * ((volume*2) ** 2 + (volume*2)**2) - im3_power / 2) 
         
         ip3_values.append(ip3[0])
         im3_values.append(im3_power[0])
