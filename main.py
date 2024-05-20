@@ -16,8 +16,8 @@ def main()->None:
     #                 frames_per_buffer=CHUNK_SIZE)
     sample_rate = 10000  #Random value 
     duration = 1  
-    frequency1 = 1000  
-    frequency2 = 2000  
+    frequency1 = 1500
+    frequency2 = 1550  
 
     #Asta este pentru timp
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
@@ -34,7 +34,8 @@ def main()->None:
         #unda de sinus 
         tone1 = volume * np.sin(2 * np.pi * frequency1 * t)
         tone2 = volume * np.sin(2 * np.pi * frequency2 * t)
-        tone_signal = tone1 + tone2
+        # tone_signal = tone1 + tone2
+        tone_signal = 2 * (tone2 - tone1)
 
     
 
