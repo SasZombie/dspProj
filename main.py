@@ -17,7 +17,7 @@ def generate_two_tones(volume):
     return tone1 + tone2
 
 def make_non_linear(singal, gain = 0.01):
-    return singal + gain + singal ** 3    
+    return singal + gain + singal ** 5  
 
 def record_sound(duration=1, sample_rate=44100):
     print("Started recording")
@@ -40,22 +40,6 @@ def main()->None:
     im3_values = []
 
     for volume in volume_levels:
-
-        
-        # data = stream.read(CHUNK_SIZE)
-                
-        #unda de sinus 
-        # tone1 = volume * np.sin(2 * np.pi * frequency1 * t)
-        # tone2 = volume * np.sin(2 * np.pi * frequency2 * t)
-        # tone_signal = tone1 + tone2
-        # tone_signal = 2 * (tone2 - tone1)
-
-        # input("Press ENTER to start recording")
-        # tone_signal = record_sound(duration=2)
-        # record_sound()
-        # _, tone_signal = wavfile.read("output.wav")
-
-        # tone_signal = tone_signal.ravel()
 
         tone_signal = generate_two_tones(volume)
         tone_signal = make_non_linear(tone_signal)
