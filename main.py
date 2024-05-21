@@ -1,20 +1,22 @@
-import pyaudio
+import librosa
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import find_peaks
-from scipy.signal import chirp, stft
+import sounddevice as sd
+import wave
+from scipy.signal import stft
+
+
+def record_sound(duration=1, sample_rate=44100):
+    print("Started recording")
+    recording = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype='float32')
+    sd.wait()  
+    print("Done recording")
+    audio_data = recording.flatten
+    
+    return recording
 
 def main()->None:
-    # p = pyaudio.PyAudio()
-
-    # CHUNK_SIZE = 1024  
-    
-    # stream = p.open(format=pyaudio.paInt16,
-    #                 channels=1,
-    #                 rate=sample_rate,
-    #                 input=True,
-    #                 frames_per_buffer=CHUNK_SIZE)
-    sample_rate = 10000  #Random value 
+    sample_rate = 44100  #Random value 
     duration = 1  
     frequency1 = 1500
     frequency2 = 1550  
@@ -32,12 +34,14 @@ def main()->None:
         # data = stream.read(CHUNK_SIZE)
                 
         #unda de sinus 
-        tone1 = volume * np.sin(2 * np.pi * frequency1 * t)
-        tone2 = volume * np.sin(2 * np.pi * frequency2 * t)
+        # tone1 = volume * np.sin(2 * np.pi * frequency1 * t)
+        # tone2 = volume * np.sin(2 * np.pi * frequency2 * t)
         # tone_signal = tone1 + tone2
-        tone_signal = 2 * (tone2 - tone1)
+        # tone_signal = 2 * (tone2 - tone1)
 
-    
+        input("Press ENTER to start recording")
+        tone_signal = record_sound(duration=2)
+        print(tone_signal)
 
         # audio = np.frombuffer(data, dtype=np.int16)
         #Folosim audio in loc de tone sig
@@ -49,16 +53,24 @@ def main()->None:
         as well as combinations of three times the input frequencies. In the STFT output, the IM3 power corresponds to the magnitude of the peak at the frequency 
         associated with the third-order intermodulation product. The magnitude represents the amplitude of the intermodulation distortion component at that frequency.
         """
-        f, t, Zxx = stft(tone_signal, fs=sample_rate)
+        f, t, Zxx = stft(tone_signal, fs=sample_rate, nperseg=2048, noverlap=512)
+        
         im3_peaks = np.where(np.abs(Zxx) == np.abs(Zxx).max())
         print(im3_peaks)
-        im3_power = np.abs(Zxx[im3_peaks[0], im3_peaks[1]]) ** 2
+        f1_index = np.argmin(np.abs(f - frequency1))
+        f2_index = np.argmin(np.abs(f - frequency2))
+        im3_1_index = np.argmin(np.abs(f - (2 * frequency1 - frequency2)))
+        im3_2_index = np.argmin(np.abs(f - (2 * frequency2 - frequency1)))
         
-        # power1 = (np.max( np.sin(2 * np.pi * frequency1 * t)) ** 2) / 2
-        # power2 = (np.max( np.sin(2 * np.pi * frequency2 * t)) ** 2) / 2  
-        # IP3=Powerin1​+Powerin2​− PowerIM3/2​​
-        #10 * log 10 doearece sunt decibeli
-        ip3 = 10 * np.log10(3/2 * ((volume*2) ** 2 + (volume*2)**2) - im3_power / 2) 
+        fundamental_power1 = np.mean(np.abs(Zxx[f1_index]) ** 2)
+        fundamental_power2 = np.mean(np.abs(Zxx[f2_index]) ** 2)
+        im3_power1 = np.mean(np.abs(Zxx[im3_1_index]) ** 2)
+        im3_power2 = np.mean(np.abs(Zxx[im3_2_index]) ** 2)
+
+        # Calculate average IM3 power
+        im3_power = (im3_power1 + im3_power2) / 2
+        a = 1
+        ip3 = 10 * np.log10(a * (fundamental_power1 + fundamental_power2) - im3_power / 2) 
         
         ip3_values.append(ip3[0])
         im3_values.append(im3_power[0])
