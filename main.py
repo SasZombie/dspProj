@@ -4,17 +4,28 @@ import numpy as np
 import sounddevice as sd
 import wave
 from scipy.signal import stft
+from scipy.io import wavfile
 
+def generate_two_tones(volume):
+    duration = 1
+    sample_rate = 44100
+    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+
+    tone1 = volume * np.sin(2 * np.pi * 1500 * t)
+    tone2 = volume * np.sin(2 * np.pi * 1550 * t)
+
+    return tone1 + tone2
+
+def make_non_linear(singal, gain = 0.01):
+    return singal + gain + singal ** 3    
 
 def record_sound(duration=1, sample_rate=44100):
     print("Started recording")
     recording = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype='float32')
     sd.wait()  
     print("Done recording")
-    audio_data = recording.flatten
+    wavfile.write("output.wav", sample_rate, recording)
     
-    return recording
-
 def main()->None:
     sample_rate = 44100  #Random value 
     duration = 1  
@@ -39,10 +50,16 @@ def main()->None:
         # tone_signal = tone1 + tone2
         # tone_signal = 2 * (tone2 - tone1)
 
-        input("Press ENTER to start recording")
-        tone_signal = record_sound(duration=2)
-        print(tone_signal)
+        # input("Press ENTER to start recording")
+        # tone_signal = record_sound(duration=2)
+        # record_sound()
+        # _, tone_signal = wavfile.read("output.wav")
 
+        # tone_signal = tone_signal.ravel()
+
+        tone_signal = generate_two_tones(volume)
+        tone_signal = make_non_linear(tone_signal)
+        print(tone_signal)
         # audio = np.frombuffer(data, dtype=np.int16)
         #Folosim audio in loc de tone sig
 
@@ -56,7 +73,7 @@ def main()->None:
         f, t, Zxx = stft(tone_signal, fs=sample_rate, nperseg=2048, noverlap=512)
         
         im3_peaks = np.where(np.abs(Zxx) == np.abs(Zxx).max())
-        print(im3_peaks)
+
         f1_index = np.argmin(np.abs(f - frequency1))
         f2_index = np.argmin(np.abs(f - frequency2))
         im3_1_index = np.argmin(np.abs(f - (2 * frequency1 - frequency2)))
@@ -69,11 +86,12 @@ def main()->None:
 
         # Calculate average IM3 power
         im3_power = (im3_power1 + im3_power2) / 2
+        print(im3_power)
         a = 1
-        ip3 = 10 * np.log10(a * (fundamental_power1 + fundamental_power2) - im3_power / 2) 
+        ip3 = 10 * np.log10(3/2 * (fundamental_power1 + fundamental_power2) - im3_power / 2) 
         
-        ip3_values.append(ip3[0])
-        im3_values.append(im3_power[0])
+        ip3_values.append(ip3)
+        im3_values.append(im3_power)
         
         plt.figure()
         plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
