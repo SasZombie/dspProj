@@ -1,7 +1,8 @@
+import os
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import sounddevice as sd
-import wave
 from scipy.signal import stft
 from scipy.fft import fft, fftfreq
 from scipy.io import wavfile
@@ -40,6 +41,9 @@ def main()->None:
     im3_values = []
 
     in_time = []
+    frames = []
+    i = 0
+
     for volume in volume_levels:
 
         tone_signal = generate_two_tones(volume)
@@ -63,11 +67,18 @@ def main()->None:
 
         freqs = fftfreq(len(fft_res), 1/sample_rate)
         mag = np.abs(fft_res)
+        plt.plot(freqs, mag)
+        
+        filename = f'frame_{i}.png'
+        plt.savefig(filename)
+        frames.append(filename)
+        plt.close()
 
-        # plt.plot(t, tone_signal)
-        # plt.plot(freqs, mag)
-        # plt.show()
+        i=i+1
+
         in_time.append([freqs, mag])
+        
+        
         im3_peaks = np.where(np.abs(Zxx) == np.abs(Zxx).max())
 
         f1_index = np.argmin(np.abs(f - frequency1))
@@ -87,6 +98,8 @@ def main()->None:
         
         ip3_values.append(ip3)
         im3_values.append(im3_power)
+
+       
         
         # plt.figure()
         # plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
@@ -128,6 +141,8 @@ def main()->None:
                 axes[ith, jth].set_title('FFT at volume: ' + str(volume_levels[j] * 100) + '%')
                 axes[ith, jth].grid(True)
                 j+=1
+        
+      
     plt.show()
 ##################################
     print(nip3_values.shape)
@@ -144,6 +159,12 @@ def main()->None:
     plt.show()
 
 
+    with imageio.get_writer('plots.gif', mode='I', duration=0.01, loop = 0) as writer:
+        for frame in frames:
+            image = imageio.imread(frame)
+            writer.append_data(image)
 
+    for frame in frames:
+        os.remove(frame)
 if __name__ == "__main__":
     main()
