@@ -1,9 +1,9 @@
-import librosa
 import matplotlib.pyplot as plt
 import numpy as np
 import sounddevice as sd
 import wave
 from scipy.signal import stft
+from scipy.fft import fft, fftfreq
 from scipy.io import wavfile
 
 def generate_two_tones(volume):
@@ -33,12 +33,13 @@ def main()->None:
     frequency2 = 1550  
 
     #Asta este pentru timp
-    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+    t1 = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 
     volume_levels = [0.1, 0.3, 0.5, 0.7, 1.0]
     ip3_values = []
     im3_values = []
 
+    in_time = []
     for volume in volume_levels:
 
         tone_signal = generate_two_tones(volume)
@@ -56,6 +57,17 @@ def main()->None:
         """
         f, t, Zxx = stft(tone_signal, fs=sample_rate, nperseg=2048, noverlap=512)
         
+        # in_time.extend(fft(tone_signal))
+        # plt.plot(t1, fft(tone_signal))
+        fft_res = fft(tone_signal)
+
+        freqs = fftfreq(len(fft_res), 1/sample_rate)
+        mag = np.abs(fft_res)
+
+        # plt.plot(t, tone_signal)
+        # plt.plot(freqs, mag)
+        # plt.show()
+        in_time.append([freqs, mag])
         im3_peaks = np.where(np.abs(Zxx) == np.abs(Zxx).max())
 
         f1_index = np.argmin(np.abs(f - frequency1))
@@ -68,7 +80,6 @@ def main()->None:
         im3_power1 = np.mean(np.abs(Zxx[im3_1_index]) ** 2)
         im3_power2 = np.mean(np.abs(Zxx[im3_2_index]) ** 2)
 
-        # Calculate average IM3 power
         im3_power = (im3_power1 + im3_power2) / 2
         print(im3_power)
         a = 1
@@ -77,19 +88,47 @@ def main()->None:
         ip3_values.append(ip3)
         im3_values.append(im3_power)
         
-        plt.figure()
-        plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
-        plt.title(f'Spectrogram - Volume: {volume * 100}%')
-        plt.ylabel('Frequency [Hz]')
-        plt.xlabel('Time [sec]')
-        plt.colorbar()
-        plt.show()
+        # plt.figure()
+        # plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
+        # plt.title(f'Spectrogram - Volume: {volume * 100}%')
+        # plt.ylabel('Frequency [Hz]')
+        # plt.xlabel('Time [sec]')
+        # plt.colorbar()
+        # plt.show()
         
     print(ip3_values)
     print(im3_values)
     nip3_values = np.array(ip3_values)
     nim3_values = np.array(im3_values)
 
+
+
+
+    # plt.plot(in_time[0][0], in_time[0][1])
+    # plt.show()
+
+    fig, axes = plt.subplots(2, 3, figsize = (15, 10))
+
+    num = len(in_time)
+    j = 0
+    for ith in range(2):
+        for jth in range(3): 
+            if ith == 1 and jth == 2:
+                axes[ith, jth].plot(volume_levels, nip3_values, label='IP3')
+                axes[ith, jth].plot(volume_levels, nim3_values, label='IM3')
+                axes[ith, jth].set_xlabel('Volume Level (%)')
+                axes[ith, jth].set_ylabel('Power (dB)')
+                axes[ith, jth].set_title('IP3 and IM3 vs. Volume Level')
+                axes[ith, jth].legend()
+                axes[ith, jth].grid(True)
+            else:
+                axes[ith, jth].plot(in_time[j][0], in_time[j][1])
+                axes[ith, jth].set_xlabel('Frequency (Hz)')
+                axes[ith, jth].set_ylabel('Magnitude (dB)')
+                axes[ith, jth].set_title('FFT at volume: ' + str(volume_levels[j] * 100) + '%')
+                axes[ith, jth].grid(True)
+                j+=1
+    plt.show()
 ##################################
     print(nip3_values.shape)
     print(nim3_values.shape)
