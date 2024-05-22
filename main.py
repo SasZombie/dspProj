@@ -43,18 +43,24 @@ def main()->None:
     in_time = []
     frames = []
     i = 0
+    
+    tone = generate_two_tones(1)
+    new_tone = np.int16(tone / np.max(np.abs(tone)) * 32767)
+    wavfile.write("generated", sample_rate, new_tone)
+    
 
     for volume in volume_levels:
 
 ###########################################################
 #if 0
 
-        tone_signal = generate_two_tones(volume)
-        tone_signal = make_non_linear(tone_signal)
+        # tone_signal = generate_two_tones(volume)
+        # tone_signal = make_non_linear(tone_signal)
 #else
-        # record_sound(duration, sample_rate)
-        # _, tone_signal = wavfile.read('output.wav')
-        # tone_signal = tone_signal.ravel()
+        input("Press enter to record!")
+        record_sound(duration, sample_rate)
+        _, tone_signal = wavfile.read('output.wav')
+        tone_signal = tone_signal.ravel()
 #endif
 ##########################################################
 
