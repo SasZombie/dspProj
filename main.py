@@ -1,5 +1,5 @@
 import os
-import imageio
+import imageio.v2 as imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import sounddevice as sd
@@ -34,7 +34,7 @@ def main()->None:
     frequency2 = 1550  
 
     #Asta este pentru timp
-    t1 = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+    # t1 = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 
     volume_levels = [0.1, 0.3, 0.5, 0.7, 1.0]
     ip3_values = []
@@ -46,12 +46,17 @@ def main()->None:
 
     for volume in volume_levels:
 
+###########################################################
+#if 0
+
         tone_signal = generate_two_tones(volume)
         tone_signal = make_non_linear(tone_signal)
-        print(tone_signal)
-        # audio = np.frombuffer(data, dtype=np.int16)
-        #Folosim audio in loc de tone sig
-
+#else
+        # record_sound(duration, sample_rate)
+        # _, tone_signal = wavfile.read('output.wav')
+        # tone_signal = tone_signal.ravel()
+#endif
+##########################################################
 
         """
         When two tones are present at the input of a nonlinear system, such as an amplifier, they generate intermodulation distortion products at the output. 
@@ -59,10 +64,9 @@ def main()->None:
         as well as combinations of three times the input frequencies. In the STFT output, the IM3 power corresponds to the magnitude of the peak at the frequency 
         associated with the third-order intermodulation product. The magnitude represents the amplitude of the intermodulation distortion component at that frequency.
         """
-        f, t, Zxx = stft(tone_signal, fs=sample_rate, nperseg=2048, noverlap=512)
+        #Folosim audio in loc de tone sig
+        f, _, Zxx = stft(tone_signal, fs=sample_rate, nperseg=2048, noverlap=512)
         
-        # in_time.extend(fft(tone_signal))
-        # plt.plot(t1, fft(tone_signal))
         fft_res = fft(tone_signal)
 
         freqs = fftfreq(len(fft_res), 1/sample_rate)
@@ -70,17 +74,18 @@ def main()->None:
         plt.plot(freqs, mag)
         
         filename = f'frame_{i}.png'
-        plt.savefig(filename)
         frames.append(filename)
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Magnitude (dB)')
+        plt.title('FFT at volume: ' + str(volume * 100) + '%')
+        plt.grid(True)
+        plt.savefig(filename)
         plt.close()
 
         i=i+1
 
         in_time.append([freqs, mag])
         
-        
-        im3_peaks = np.where(np.abs(Zxx) == np.abs(Zxx).max())
-
         f1_index = np.argmin(np.abs(f - frequency1))
         f2_index = np.argmin(np.abs(f - frequency2))
         im3_1_index = np.argmin(np.abs(f - (2 * frequency1 - frequency2)))
@@ -92,15 +97,14 @@ def main()->None:
         im3_power2 = np.mean(np.abs(Zxx[im3_2_index]) ** 2)
 
         im3_power = (im3_power1 + im3_power2) / 2
-        print(im3_power)
-        a = 1
+
         ip3 = 10 * np.log10(3/2 * (fundamental_power1 + fundamental_power2) - im3_power / 2) 
         
         ip3_values.append(ip3)
         im3_values.append(im3_power)
 
        
-        
+        #This is chroma :3
         # plt.figure()
         # plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
         # plt.title(f'Spectrogram - Volume: {volume * 100}%')
@@ -109,20 +113,11 @@ def main()->None:
         # plt.colorbar()
         # plt.show()
         
-    print(ip3_values)
-    print(im3_values)
     nip3_values = np.array(ip3_values)
     nim3_values = np.array(im3_values)
 
+    _, axes = plt.subplots(2, 3, figsize = (15, 10))
 
-
-
-    # plt.plot(in_time[0][0], in_time[0][1])
-    # plt.show()
-
-    fig, axes = plt.subplots(2, 3, figsize = (15, 10))
-
-    num = len(in_time)
     j = 0
     for ith in range(2):
         for jth in range(3): 
@@ -144,10 +139,6 @@ def main()->None:
         
       
     plt.show()
-##################################
-    print(nip3_values.shape)
-    print(nim3_values.shape)
-##################################
 
     plt.plot(volume_levels, nip3_values, label='IP3')
     plt.plot(volume_levels, nim3_values, label='IM3')
