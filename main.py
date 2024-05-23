@@ -8,7 +8,7 @@ from scipy.fft import fft, fftfreq
 from scipy.io import wavfile
 
 def generate_two_tones(volume):
-    duration = 1
+    duration = 5
     sample_rate = 44100
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 
@@ -46,7 +46,7 @@ def main()->None:
     
     tone = generate_two_tones(1)
     new_tone = np.int16(tone / np.max(np.abs(tone)) * 32767)
-    wavfile.write("generated", sample_rate, new_tone)
+    wavfile.write("generated.wav", sample_rate, new_tone)
     
 
     for volume in volume_levels:
