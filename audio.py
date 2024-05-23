@@ -6,8 +6,13 @@ import wave
 FORMAT = 'int16'           # 16-bit resolution
 CHANNELS = 1               # Mono channel
 RATE = 44100               # Sampling rate (samples per second)
-RECORD_SECONDS = 1         # Duration of recording
+RECORD_SECONDS = 4         # Duration of recording
 OUTPUT_FILENAME = "output.wav"  # Output file name
+
+input_name = 'Razer Seiren V2 Pro:'
+
+sd.default.device = (input_name, None)
+print(sd.query_devices())
 
 print("Recording...")
 

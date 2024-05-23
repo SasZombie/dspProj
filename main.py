@@ -33,6 +33,9 @@ def main()->None:
     frequency1 = 1500
     frequency2 = 1550  
 
+    input_name = 'Razer Seiren V2 Pro:' #This should be changed on other systems!!
+
+    sd.default.device = (input_name, None)
     #Asta este pentru timp
     # t1 = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 
