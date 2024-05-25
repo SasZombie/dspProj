@@ -7,35 +7,40 @@ from scipy.signal import stft
 from scipy.fft import fft, fftfreq
 from scipy.io import wavfile
 
+someshit: int = 0
+
 def generate_two_tones(volume):
     duration = 5
-    sample_rate = 44100
+    sample_rate = 49152
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 
     tone1 = volume * np.sin(2 * np.pi * 1500 * t)
     tone2 = volume * np.sin(2 * np.pi * 1550 * t)
-
+    
     return tone1 + tone2
 
 def make_non_linear(singal, gain = 0.01):
     return singal + gain + singal ** 5  
 
-def record_sound(duration=1, sample_rate=44100):
+tes = 0
+def record_sound(duration=1, sample_rate=49152, name = 'sas'):
     print("Started recording")
     recording = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype='float32')
     sd.wait()  
     print("Done recording")
-    wavfile.write("output.wav", sample_rate, recording)
+    wavfile.write(name, sample_rate, recording)
     
 def main()->None:
-    sample_rate = 44100  #Random value 
+    sample_rate = 49152  #Random value 
+    #Trebuie sa fie putere de 2 diferenta 
+    #Extrag componenta de putere, fara cea din mijloc
+    #Need to save the recordings
     duration = 1  
     frequency1 = 1500
-    frequency2 = 1550  
+    frequency2 = 1550
+    #a power of 2 proportioal to 2* (f2 - f1)/16 
 
-    input_name = 'Razer Seiren V2 Pro:' #This should be changed on other systems!!
-
-    sd.default.device = (input_name, None)
+    
     #Asta este pentru timp
     # t1 = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 
@@ -50,20 +55,29 @@ def main()->None:
     tone = generate_two_tones(1)
     new_tone = np.int16(tone / np.max(np.abs(tone)) * 32767)
     wavfile.write("generated.wav", sample_rate, new_tone)
-    
-
+    # for i in range(5):
+    #     input("Press enter to Record")
+    #     record_sound(duration, sample_rate, ('generated' + str(i) + '.wav'))
+   
+   
+    ind = 0
     for volume in volume_levels:
-
+        
 ###########################################################
 #if 0
 
         # tone_signal = generate_two_tones(volume)
         # tone_signal = make_non_linear(tone_signal)
+#else if 0
+        # input("Press enter to record!")
+        # record_sound(duration, sample_rate)
+        # _, tone_signal = wavfile.read('output' + str(someshit) + '.wav')
+        # tone_signal = tone_signal.ravel()
 #else
-        input("Press enter to record!")
-        record_sound(duration, sample_rate)
-        _, tone_signal = wavfile.read('output.wav')
+        _, tone_signal = wavfile.read('generated' + str(ind) + '.wav')
         tone_signal = tone_signal.ravel()
+
+        ind = ind + 1
 #endif
 ##########################################################
 
@@ -74,13 +88,20 @@ def main()->None:
         associated with the third-order intermodulation product. The magnitude represents the amplitude of the intermodulation distortion component at that frequency.
         """
         #Folosim audio in loc de tone sig
-        f, _, Zxx = stft(tone_signal, fs=sample_rate, nperseg=2048, noverlap=512)
+        f, _, Zxx = stft(tone_signal, window='hann', fs=sample_rate, nperseg=2048, noverlap=512)
         
         fft_res = fft(tone_signal)
 
+        threshold = np.percentile(np.abs(Zxx), 95)
         freqs = fftfreq(len(fft_res), 1/sample_rate)
         mag = np.abs(fft_res)
+        
+        scale = 0.01
+        
+        mask = (freqs < 400) & (freqs > -400)
+        mag[mask] = np.random.uniform(0, scale * np.max(mag), size=mask.sum())
         plt.plot(freqs, mag)
+        in_time.append([2 * freqs, mag])
         
         filename = f'frame_{i}.png'
         frames.append(filename)
@@ -93,15 +114,20 @@ def main()->None:
 
         i=i+1
 
-        in_time.append([freqs, mag])
         
         f1_index = np.argmin(np.abs(f - frequency1))
         f2_index = np.argmin(np.abs(f - frequency2))
         im3_1_index = np.argmin(np.abs(f - (2 * frequency1 - frequency2)))
         im3_2_index = np.argmin(np.abs(f - (2 * frequency2 - frequency1)))
-        
-        fundamental_power1 = np.mean(np.abs(Zxx[f1_index]) ** 2)
-        fundamental_power2 = np.mean(np.abs(Zxx[f2_index]) ** 2)
+
+        Zxx[np.abs(Zxx) < threshold] = 0
+
+        fundamental_power1 = np.abs(Zxx[f1_index, i])
+        fundamental_power2 = np.abs(Zxx[f2_index, i])
+        # fundamental_power1 = np.mean([np.abs(Zxx[f1_index, i]) ** 2 for i in range(Zxx.shape[1])])
+        # fundamental_power2 = np.mean([np.abs(Zxx[f2_index, i]) ** 2 for i in range(Zxx.shape[1])])
+        # fundamental_power1 = np.mean(np.abs(Zxx[f1_index]) ** 2)
+        # fundamental_power2 = np.mean(np.abs(Zxx[f2_index]) ** 2)
         im3_power1 = np.mean(np.abs(Zxx[im3_1_index]) ** 2)
         im3_power2 = np.mean(np.abs(Zxx[im3_2_index]) ** 2)
 
@@ -149,8 +175,9 @@ def main()->None:
       
     plt.show()
 
-    plt.plot(volume_levels, nip3_values, label='IP3')
-    plt.plot(volume_levels, nim3_values, label='IM3')
+    plt.scatter(volume_levels, nip3_values, nim3_values)
+    # plt.plot(volume_levels, nip3_values, label='IP3')
+    # plt.plot(volume_levels, nim3_values, label='IM3')
     plt.xlabel('Volume Level (%)')
     plt.ylabel('Power (dB)')
     plt.title('IP3 and IM3 vs. Volume Level')
