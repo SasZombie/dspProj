@@ -11,7 +11,7 @@ someshit: int = 0
 
 def generate_two_tones(volume):
     duration = 5
-    sample_rate = 49152
+    sample_rate = 44100
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 
     tone1 = volume * np.sin(2 * np.pi * 1500 * t)
@@ -23,7 +23,7 @@ def make_non_linear(singal, gain = 0.01):
     return singal + gain + singal ** 5  
 
 tes = 0
-def record_sound(duration=1, sample_rate=49152, name = 'sas'):
+def record_sound(duration=1, sample_rate=44100, name = 'sas'):
     print("Started recording")
     recording = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype='float32')
     sd.wait()  
@@ -31,7 +31,8 @@ def record_sound(duration=1, sample_rate=49152, name = 'sas'):
     wavfile.write(name, sample_rate, recording)
     
 def main()->None:
-    sample_rate = 49152  #Random value 
+    # sample_rate = 49152  #Random value 
+    sample_rate = 49152
     #Trebuie sa fie putere de 2 diferenta 
     #Extrag componenta de putere, fara cea din mijloc
     #Need to save the recordings
@@ -71,9 +72,9 @@ def main()->None:
 #else if 0
         # input("Press enter to record!")
         # record_sound(duration, sample_rate)
-        # _, tone_signal = wavfile.read('output' + str(someshit) + '.wav')
+        # _, tone_signal = wavfile.read('output.wav')
         # tone_signal = tone_signal.ravel()
-#else
+# else
         _, tone_signal = wavfile.read('generated' + str(ind) + '.wav')
         tone_signal = tone_signal.ravel()
 
@@ -124,10 +125,6 @@ def main()->None:
 
         fundamental_power1 = np.abs(Zxx[f1_index, i])
         fundamental_power2 = np.abs(Zxx[f2_index, i])
-        # fundamental_power1 = np.mean([np.abs(Zxx[f1_index, i]) ** 2 for i in range(Zxx.shape[1])])
-        # fundamental_power2 = np.mean([np.abs(Zxx[f2_index, i]) ** 2 for i in range(Zxx.shape[1])])
-        # fundamental_power1 = np.mean(np.abs(Zxx[f1_index]) ** 2)
-        # fundamental_power2 = np.mean(np.abs(Zxx[f2_index]) ** 2)
         im3_power1 = np.mean(np.abs(Zxx[im3_1_index]) ** 2)
         im3_power2 = np.mean(np.abs(Zxx[im3_2_index]) ** 2)
 
@@ -138,15 +135,6 @@ def main()->None:
         ip3_values.append(ip3)
         im3_values.append(im3_power)
 
-       
-        #This is chroma :3
-        # plt.figure()
-        # plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
-        # plt.title(f'Spectrogram - Volume: {volume * 100}%')
-        # plt.ylabel('Frequency [Hz]')
-        # plt.xlabel('Time [sec]')
-        # plt.colorbar()
-        # plt.show()
         
     nip3_values = np.array(ip3_values)
     nim3_values = np.array(im3_values)
